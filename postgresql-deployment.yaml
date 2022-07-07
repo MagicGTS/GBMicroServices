@@ -36,11 +36,15 @@ spec:
           - name: POSTGRES_USER
             valueFrom:
               secretKeyRef:
-                name: postgre-user-pass
-                key: username
+                name: redmine-user-pass
+                key: db_username
                 optional: false
           - name: POSTGRES_DB
-            value: testdatabase
+            valueFrom:
+              secretKeyRef:
+                name: redmine-user-pass
+                key: db_name
+                optional: false
           - name: PGDATA
             value: /mnt/data/pgdata
       
@@ -55,9 +59,9 @@ spec:
       volumes:
         - name: secret
           secret:
-            secretName: postgre-user-pass
+            secretName: redmine-user-pass
             items:
-              - key: password
+              - key: db_password
                 path: password
         - name: postgre-pgdata
           persistentVolumeClaim:
