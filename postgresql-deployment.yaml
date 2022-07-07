@@ -6,7 +6,10 @@ metadata:
 spec:
   replicas: 1
   strategy:
-    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 0
   selector:
     matchLabels:
       app: postgresql
@@ -26,7 +29,7 @@ spec:
             mountPath: /secret
             readOnly: true
           - name: postgre-pgdata
-            mountPath: /var/lib/postgresql/data/pgdata
+            mountPath: /mnt/data
         env:
           - name: POSTGRES_PASSWORD_FILE
             value: /secret/password
@@ -39,7 +42,16 @@ spec:
           - name: POSTGRES_DB
             value: testdatabase
           - name: PGDATA
-            value: /var/lib/postgresql/data/pgdata
+            value: /mnt/data/pgdata
+      
+      initContainers:
+      - name: volume-dirs-init-cntr
+        image: busybox:1.35
+        command:
+        - "/bin/mkdir"
+        args:
+        - "-p"
+        - "/mnt/data/pgdata"
       volumes:
         - name: secret
           secret:
