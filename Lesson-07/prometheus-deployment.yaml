@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: prometheus-stateful
+  namespace: default
+  labels:
+    app: prometheus-server
+spec:
+  serviceName: prometheus
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus-server
+  template:
+    metadata:
+      labels:
+        app: prometheus-server
+    spec:
+      serviceAccount: prometheus
+      containers:
+        - name: prometheus
+          image: prom/prometheus:v2.19.2
+          args:
+            - "--config.file=/etc/prometheus/prometheus.yml"
+            - "--storage.tsdb.path=/prometheus/"
+          ports:
+            - containerPort: 9090
+          volumeMounts:
+            - name: prometheus-config-volume
+              mountPath: /etc/prometheus/
+            - name: prometheus-data
+              mountPath: /prometheus
+      initContainers:
+      - name: volume-dirs-init-cntr
+        image: busybox:1.35
+        volumeMounts:
+          - name: prometheus-data
+            mountPath: /prometheus
+        command:
+        - "/bin/chmod"
+        args:
+        - "-R"
+        - "777"
+        - "/prometheus"
+      volumes:
+        - name: prometheus-config-volume
+          configMap:
+            defaultMode: 420
+            name: prometheus-server-conf
+        - name: prometheus-data
+          persistentVolumeClaim:
+            claimName: prometheus-data
